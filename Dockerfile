@@ -56,5 +56,7 @@ ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mp
 echo 'Seeding missing files from image into volume...' && \
 cp -rn /var/www/html/script_seed/. /var/www/html/script/ && \
 chown -R www-data:www-data /var/www/html/script && \
-echo 'Seed complete. Starting Apache...' && \
+echo 'Running DB setup...' && \
+php /var/www/html/setup.php && \
+echo 'Starting Apache...' && \
 exec apache2-foreground"]
