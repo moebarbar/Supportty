@@ -28,27 +28,32 @@ RUN a2enmod rewrite headers deflate expires
 
 RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
-ENV PORT=8080
-RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
-&& sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
+# Use CLOUD_URL host as ServerName so Apache R=301 redirects never include :8080
+ENV RAILWAY_PUBLIC_DOMAIN=supportty-production.up.railway.app
+RUN sed -i 's|<VirtualHost \*:80>|<VirtualHost *:80>\n    ServerName supportty-production.up.railway.app\n    UseCanonicalName On\n    UseCanonicalPhysicalPort Off|' \
+    /etc/apache2/sites-available/000-default.conf
 
-RUN { \
-echo 'upload_max_filesize = 32M'; \
-echo 'post_max_size = 32M'; \
-echo 'memory_limit = 256M'; \
-echo 'max_execution_time = 120'; \
-} > /usr/local/etc/php/conf.d/supportty.ini
+    ENV PORT=8080
+    RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
+    && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
 
-WORKDIR /var/www/html
-COPY . /var/www/html/
+    RUN { \
+    echo 'upload_max_filesize = 32M'; \
+    echo 'post_max_size = 32M'; \
+    echo 'memory_limit = 256M'; \
+    echo 'max_execution_time = 120'; \
+    } > /usr/local/etc/php/conf.d/supportty.ini
 
-RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config /var/www/html/script/apps \
-&& chown -R www-data:www-data /var/www/html
+    WORKDIR /var/www/html
+    COPY . /var/www/html/
 
-RUN cp -r /var/www/html/script /var/www/html/script_seed
+    RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config /var/www/html/script/apps \
+    && chown -R www-data:www-data /var/www/html
 
-RUN chmod +x /var/www/html/entrypoint.sh
+    RUN cp -r /var/www/html/script /var/www/html/script_seed
 
-EXPOSE 8080
+    RUN chmod +x /var/www/html/entrypoint.sh
 
-CMD ["/var/www/html/entrypoint.sh"]
+    EXPOSE 8080
+
+    CMD ["/var/www/html/entrypoint.sh"]
