@@ -24,11 +24,13 @@ bcmath \
 exif \
 opcache
 
-# Fix Apache MPM conflict: forcibly remove all MPM symlinks, then enable only mpm_prefork (required for mod_php)
-RUN rm -f /etc/apache2/mods-enabled/mpm_*.* \
- && rm -f /etc/apache2/mods-enabled/mpm_* \
-  && ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
-   && ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
+# Fix Apache MPM conflict: remove ALL mpm symlinks from mods-enabled,
+# then explicitly enable ONLY mpm_prefork (required by mod_php)
+# Also remove any stray mpm load/conf files from conf-enabled
+RUN find /etc/apache2/mods-enabled -name 'mpm_*' -delete \
+ && find /etc/apache2/conf-enabled -name 'mpm_*' -delete 2>/dev/null || true \
+  && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
+   && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
     && a2enmod rewrite headers deflate expires
 
     RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
@@ -52,4 +54,5 @@ RUN rm -f /etc/apache2/mods-enabled/mpm_*.* \
 
       EXPOSE 8080
 
-      CMD ["apache2-foreground"]
+      # Verify Apache config before starting
+      CMD apachectl configtest && apache2-foreground
