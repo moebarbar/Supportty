@@ -47,16 +47,8 @@ RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config /var/www/h
 
 RUN cp -r /var/www/html/script /var/www/html/script_seed
 
+RUN chmod +x /var/www/html/entrypoint.sh
+
 EXPOSE 8080
 
-CMD ["/bin/bash", "-c", "\
-find /etc/apache2/mods-enabled -name 'mpm_*' -delete && \
-ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load && \
-ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf && \
-echo 'Seeding missing files from image into volume...' && \
-cp -rn /var/www/html/script_seed/. /var/www/html/script/ && \
-chown -R www-data:www-data /var/www/html/script && \
-echo 'Running DB setup...' && \
-php /var/www/html/setup.php && \
-echo 'Starting Apache...' && \
-exec apache2-foreground"]
+CMD ["/var/www/html/entrypoint.sh"]
