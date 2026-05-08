@@ -1,0 +1,13 @@
+.git
+.gitignore
+.claude/
+.DS_Store
+**/.DS_Store
+*.log
+script/uploads/*
+!script/uploads/.gitkeep
+script/config/config_*.php
+.vscode/
+.idea/
+account/backup/*
+!account/backup/.gitkeep
