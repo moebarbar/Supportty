@@ -24,35 +24,38 @@ bcmath \
 exif \
 opcache
 
-# Fix Apache MPM conflict: remove ALL mpm symlinks from mods-enabled,
-# then explicitly enable ONLY mpm_prefork (required by mod_php)
-# Also remove any stray mpm load/conf files from conf-enabled
-RUN find /etc/apache2/mods-enabled -name 'mpm_*' -delete \
- && find /etc/apache2/conf-enabled -name 'mpm_*' -delete 2>/dev/null || true \
-  && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
-   && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
-    && a2enmod rewrite headers deflate expires
+# Debug: show what MPM files exist BEFORE our fix
+RUN echo '=== MODS-ENABLED BEFORE ===' && ls -la /etc/apache2/mods-enabled/ | grep mpm
 
-    RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
+# Fix Apache MPM: remove all MPM load/conf files, enable ONLY mpm_prefork
+RUN find /etc/apache2/ -name 'mpm_*' -path '*/mods-enabled/*' -delete \
+ && ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
+  && ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf
 
-    ENV PORT=8080
-    RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
-     && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
+  # Debug: show what MPM files exist AFTER our fix
+  RUN echo '=== MODS-ENABLED AFTER ===' && ls -la /etc/apache2/mods-enabled/ | grep mpm
 
-     RUN { \
-     echo 'upload_max_filesize = 32M'; \
-     echo 'post_max_size = 32M'; \
-     echo 'memory_limit = 256M'; \
-     echo 'max_execution_time = 120'; \
-     } > /usr/local/etc/php/conf.d/supportty.ini
+  RUN a2enmod rewrite headers deflate expires
 
-     WORKDIR /var/www/html
-     COPY . /var/www/html/
+  RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
-     RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config \
-      && chown -R www-data:www-data /var/www/html
+  ENV PORT=8080
+  RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
+   && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
 
-      EXPOSE 8080
+   RUN { \
+   echo 'upload_max_filesize = 32M'; \
+   echo 'post_max_size = 32M'; \
+   echo 'memory_limit = 256M'; \
+   echo 'max_execution_time = 120'; \
+   } > /usr/local/etc/php/conf.d/supportty.ini
 
-      # Verify Apache config before starting
-      CMD apachectl configtest && apache2-foreground
+   WORKDIR /var/www/html
+   COPY . /var/www/html/
+
+   RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config \
+    && chown -R www-data:www-data /var/www/html
+
+    EXPOSE 8080
+
+    CMD ["apache2-foreground"]
