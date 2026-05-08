@@ -24,38 +24,30 @@ bcmath \
 exif \
 opcache
 
-# Debug: show what MPM files exist BEFORE our fix
-RUN echo '=== MODS-ENABLED BEFORE ===' && ls -la /etc/apache2/mods-enabled/ | grep mpm
+# Deep debug: find ALL LoadModule mpm directives anywhere in apache2 config
+RUN grep -r 'LoadModule.*mpm' /etc/apache2/ 2>/dev/null && echo '---FULL MODS-ENABLED---' && ls /etc/apache2/mods-enabled/ && echo '---PHP LOAD FILE---' && cat /etc/apache2/mods-enabled/php*.load 2>/dev/null || echo 'no php load'
 
-# Fix Apache MPM: remove all MPM load/conf files, enable ONLY mpm_prefork
-RUN find /etc/apache2/ -name 'mpm_*' -path '*/mods-enabled/*' -delete \
- && ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
-  && ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf
+RUN a2enmod rewrite headers deflate expires
 
-  # Debug: show what MPM files exist AFTER our fix
-  RUN echo '=== MODS-ENABLED AFTER ===' && ls -la /etc/apache2/mods-enabled/ | grep mpm
+RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
-  RUN a2enmod rewrite headers deflate expires
+ENV PORT=8080
+RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
+ && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
 
-  RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
+ RUN { \
+ echo 'upload_max_filesize = 32M'; \
+ echo 'post_max_size = 32M'; \
+ echo 'memory_limit = 256M'; \
+ echo 'max_execution_time = 120'; \
+ } > /usr/local/etc/php/conf.d/supportty.ini
 
-  ENV PORT=8080
-  RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
-   && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
+ WORKDIR /var/www/html
+ COPY . /var/www/html/
 
-   RUN { \
-   echo 'upload_max_filesize = 32M'; \
-   echo 'post_max_size = 32M'; \
-   echo 'memory_limit = 256M'; \
-   echo 'max_execution_time = 120'; \
-   } > /usr/local/etc/php/conf.d/supportty.ini
+ RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config \
+  && chown -R www-data:www-data /var/www/html
 
-   WORKDIR /var/www/html
-   COPY . /var/www/html/
+  EXPOSE 8080
 
-   RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config \
-    && chown -R www-data:www-data /var/www/html
-
-    EXPOSE 8080
-
-    CMD ["apache2-foreground"]
+  CMD ["apache2-foreground"]
