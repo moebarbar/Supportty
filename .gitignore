@@ -1,0 +1,24 @@
+# Per-tenant configs (contain live DB credentials)
+script/config/config_*.php
+
+# User-uploaded content
+script/uploads/*
+!script/uploads/.gitkeep
+account/media/uploads/
+
+# Logs
+*.log
+script/logs/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local env overrides (if you add them later)
+.env
+.env.local
+
+# Local Claude Code config
+.claude/
