@@ -24,30 +24,35 @@ bcmath \
 exif \
 opcache
 
-# Deep debug: find ALL LoadModule mpm directives anywhere in apache2 config
-RUN grep -r 'LoadModule.*mpm' /etc/apache2/ 2>/dev/null && echo '---FULL MODS-ENABLED---' && ls /etc/apache2/mods-enabled/ && echo '---PHP LOAD FILE---' && cat /etc/apache2/mods-enabled/php*.load 2>/dev/null || echo 'no php load'
+# Show ALL mods-enabled LoadModule lines before any changes
+RUN grep -rh 'LoadModule' /etc/apache2/mods-enabled/ 2>/dev/null
 
-RUN a2enmod rewrite headers deflate expires
+# The php8.2.load file also loads mpm_prefork - the standalone mpm_prefork.load
+# causes a double-load. Remove it so only php8.2.load loads the MPM.
+RUN rm -f /etc/apache2/mods-enabled/mpm_prefork.load \
+ && rm -f /etc/apache2/mods-enabled/mpm_prefork.conf
 
-RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
+ RUN a2enmod rewrite headers deflate expires
 
-ENV PORT=8080
-RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
- && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
+ RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
- RUN { \
- echo 'upload_max_filesize = 32M'; \
- echo 'post_max_size = 32M'; \
- echo 'memory_limit = 256M'; \
- echo 'max_execution_time = 120'; \
- } > /usr/local/etc/php/conf.d/supportty.ini
+ ENV PORT=8080
+ RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
+  && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
 
- WORKDIR /var/www/html
- COPY . /var/www/html/
+  RUN { \
+  echo 'upload_max_filesize = 32M'; \
+  echo 'post_max_size = 32M'; \
+  echo 'memory_limit = 256M'; \
+  echo 'max_execution_time = 120'; \
+  } > /usr/local/etc/php/conf.d/supportty.ini
 
- RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config \
-  && chown -R www-data:www-data /var/www/html
+  WORKDIR /var/www/html
+  COPY . /var/www/html/
 
-  EXPOSE 8080
+  RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config \
+   && chown -R www-data:www-data /var/www/html
 
-  CMD ["apache2-foreground"]
+   EXPOSE 8080
+
+   CMD ["apache2-foreground"]
