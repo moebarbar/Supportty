@@ -24,35 +24,29 @@ bcmath \
 exif \
 opcache
 
-# Show ALL mods-enabled LoadModule lines before any changes
-RUN grep -rh 'LoadModule' /etc/apache2/mods-enabled/ 2>/dev/null
+RUN a2enmod rewrite headers deflate expires
 
-# The php8.2.load file also loads mpm_prefork - the standalone mpm_prefork.load
-# causes a double-load. Remove it so only php8.2.load loads the MPM.
-RUN rm -f /etc/apache2/mods-enabled/mpm_prefork.load \
- && rm -f /etc/apache2/mods-enabled/mpm_prefork.conf
+RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
- RUN a2enmod rewrite headers deflate expires
+ENV PORT=8080
+RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
+ && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
 
- RUN sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
+ RUN { \
+ echo 'upload_max_filesize = 32M'; \
+ echo 'post_max_size = 32M'; \
+ echo 'memory_limit = 256M'; \
+ echo 'max_execution_time = 120'; \
+ } > /usr/local/etc/php/conf.d/supportty.ini
 
- ENV PORT=8080
- RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
-  && sed -i 's/:80>/:${PORT}>/g' /etc/apache2/sites-available/000-default.conf
+ WORKDIR /var/www/html
+ COPY . /var/www/html/
 
-  RUN { \
-  echo 'upload_max_filesize = 32M'; \
-  echo 'post_max_size = 32M'; \
-  echo 'memory_limit = 256M'; \
-  echo 'max_execution_time = 120'; \
-  } > /usr/local/etc/php/conf.d/supportty.ini
+ RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config \
+  && chown -R www-data:www-data /var/www/html
 
-  WORKDIR /var/www/html
-  COPY . /var/www/html/
+  EXPOSE 8080
 
-  RUN mkdir -p /var/www/html/script/uploads /var/www/html/script/config \
-   && chown -R www-data:www-data /var/www/html
-
-   EXPOSE 8080
-
-   CMD ["apache2-foreground"]
+  # Fix MPM at runtime: remove all mpm_* from mods-enabled, then enable only prefork
+  CMD ["/bin/bash", "-c", "find /etc/apache2/mods-enabled -name 'mpm_*' -delete && ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load && ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf && exec apache2-foreground"]
+  
