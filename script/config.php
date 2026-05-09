@@ -41,6 +41,15 @@ define('CLOUD_DB_USER',     getenv('CLOUD_DB_USER')     ?: getenv('MYSQLUSER')  
 define('CLOUD_DB_PASSWORD', getenv('CLOUD_DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: '');
 define('CLOUD_DB_HOST',     getenv('CLOUD_DB_HOST')     ?: getenv('MYSQLHOST')     ?: getenv('MYSQL_HOST')     ?: 'localhost');
 
+// Support Board core DB connection — used by sb_db_connect() in script/include/functions.php.
+// Same MySQL as CLOUD_DB_* on Railway; kept as separate constants because the SB core
+// references them by these specific names.
+define('SB_DB_NAME',     getenv('SB_DB_NAME')     ?: CLOUD_DB_NAME);
+define('SB_DB_USER',     getenv('SB_DB_USER')     ?: CLOUD_DB_USER);
+define('SB_DB_PASSWORD', getenv('SB_DB_PASSWORD') ?: CLOUD_DB_PASSWORD);
+define('SB_DB_HOST',     getenv('SB_DB_HOST')     ?: CLOUD_DB_HOST);
+define('SB_DB_PORT',     (int) (getenv('SB_DB_PORT') ?: getenv('MYSQLPORT') ?: getenv('MYSQL_PORT') ?: 3306));
+
 // Cloud public URL (auto-derived from Railway domain if not set explicitly)
 define('CLOUD_URL', getenv('CLOUD_URL') ?: (getenv('RAILWAY_PUBLIC_DOMAIN') ? 'https://' . getenv('RAILWAY_PUBLIC_DOMAIN') : ''));
 
