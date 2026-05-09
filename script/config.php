@@ -41,6 +41,14 @@ define('CLOUD_DB_USER',     getenv('CLOUD_DB_USER')     ?: getenv('MYSQLUSER')  
 define('CLOUD_DB_PASSWORD', getenv('CLOUD_DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: '');
 define('CLOUD_DB_HOST',     getenv('CLOUD_DB_HOST')     ?: getenv('MYSQLHOST')     ?: getenv('MYSQL_HOST')     ?: 'localhost');
 
+// SB core DB (same MySQL — required by script/include/functions.php)
+define('SB_DB_HOST',     getenv('MYSQLHOST')     ?: 'localhost');
+define('SB_DB_USER',     getenv('MYSQLUSER')     ?: '');
+define('SB_DB_PASSWORD', getenv('MYSQLPASSWORD') ?: '');
+define('SB_DB_NAME',     getenv('MYSQLDATABASE') ?: '');
+define('SB_DB_PORT',     (int)(getenv('MYSQLPORT') ?: 3306));
+define('SB_URL',         getenv('CLOUD_URL')     ?: '');
+
 // Support Board core DB connection — used by sb_db_connect() in script/include/functions.php.
 // Same MySQL as CLOUD_DB_* on Railway; kept as separate constants because the SB core
 // references them by these specific names.
