@@ -16,6 +16,16 @@ $conn = new mysqli($host, $user, $password, $dbname, $port ?: null);
 if ($conn->connect_error) { echo "[setup] Connect error: " . $conn->connect_error . "\n"; exit(1); }
 $conn->set_charset('utf8mb4');
 
+// MySQL 8+/9+ defaults break Support Board queries (ANSI_QUOTES treats double-quoted
+// strings as identifiers; ONLY_FULL_GROUP_BY rejects partial GROUP BY; STRICT_TRANS_TABLES
+// rejects legacy datetime values). Clear sql_mode globally so all connections — including
+// the per-tenant ones created during signup — inherit the relaxed mode.
+if (@$conn->query("SET GLOBAL sql_mode = ''")) {
+    echo "[setup] Cleared GLOBAL sql_mode.\n";
+} else {
+    echo "[setup] Could not SET GLOBAL sql_mode (need SUPER priv): {$conn->error}\n";
+}
+
 function run_sql_file($conn, $file, $label) {
              if (!file_exists($file)) { echo "[setup] $label: SQL file not found: $file\n"; return; }
              $raw = file_get_contents($file);
