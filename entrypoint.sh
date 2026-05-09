@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 set -eu
 
 # Force mpm_prefork (required for mod_php in php:8.2-apache).
