@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 set -eu
 
 # Force mpm_prefork (required for mod_php in php:8.2-apache).
@@ -7,30 +7,38 @@ ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mp
 ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf
 
 # Sync script/ from image into the Railway volume.
-#   - Code/asset subdirs: always overwrite so repo updates propagate.
-#   - User-data subdirs (config, uploads, apps): only seed if missing.
+# - Code/asset subdirs: always overwrite so repo updates propagate.
+# - User-data subdirs (config, uploads, apps): only seed if missing.
 if [ -d /var/www/html/script_seed ]; then
-    echo "[entrypoint] Syncing script/ from image (preserving: config, uploads, apps)..."
-    shopt -s dotglob
-    for src in /var/www/html/script_seed/*; do
-        name=$(basename "$src")
-        dest="/var/www/html/script/$name"
-        case "$name" in
-            config|uploads|apps)
-                if [ ! -e "$dest" ]; then
-                    echo "[entrypoint]   seeding missing /script/$name"
-                    cp -r "$src" "$dest"
-                fi
-                ;;
-            *)
-                cp -rf "$src" "/var/www/html/script/"
-                ;;
-        esac
-    done
-    shopt -u dotglob
-    chown -R www-data:www-data /var/www/html/script
+echo "[entrypoint] Syncing script/ from image (preserving: config, uploads, apps)..."
+shopt -s dotglob
+for src in /var/www/html/script_seed/*; do
+name=$(basename "$src")
+dest="/var/www/html/script/$name"
+case "$name" in
+config|uploads|apps)
+if [ ! -e "$dest" ]; then
+echo "[entrypoint] seeding missing /script/$name"
+cp -r "$src" "$dest"
+fi
+;;
+*)
+cp -rf "$src" "/var/www/html/script/"
+;;
+esac
+done
+shopt -u dotglob
+chown -R www-data:www-data /var/www/html/script
 else
-    echo "[entrypoint] WARNING: /var/www/html/script_seed not found, skipping sync"
+echo "[entrypoint] WARNING: /var/www/html/script_seed not found, skipping sync"
+fi
+
+# Remove stale SB-core generated config files that contain hardcoded DB constants.
+# These conflict with our config.php which reads from environment variables.
+# The SB core will regenerate the config from setup.php using the correct env vars.
+if [ -d /var/www/html/script/config ]; then
+echo "[entrypoint] Removing stale SB-core config files..."
+find /var/www/html/script/config -name 'config_*.php' -delete
 fi
 
 # DB schema setup. Non-fatal: if it fails (e.g. board.support unreachable,
