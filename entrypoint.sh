@@ -9,25 +9,29 @@ ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mp
 # Sync script/ from image into the Railway volume.
 #   - Code/asset subdirs: always overwrite so repo updates propagate.
 #   - User-data subdirs (config, uploads, apps): only seed if missing.
-echo "[entrypoint] Syncing script/ from image (preserving: config, uploads, apps)..."
-shopt -s dotglob
-for src in /var/www/html/script_seed/*; do
-    name=$(basename "$src")
-    dest="/var/www/html/script/$name"
-    case "$name" in
-        config|uploads|apps)
-            if [ ! -e "$dest" ]; then
-                echo "[entrypoint]   seeding missing /script/$name"
-                cp -r "$src" "$dest"
-            fi
-            ;;
-        *)
-            cp -rf "$src" "/var/www/html/script/"
-            ;;
-    esac
-done
-shopt -u dotglob
-chown -R www-data:www-data /var/www/html/script
+if [ -d /var/www/html/script_seed ]; then
+    echo "[entrypoint] Syncing script/ from image (preserving: config, uploads, apps)..."
+    shopt -s dotglob
+    for src in /var/www/html/script_seed/*; do
+        name=$(basename "$src")
+        dest="/var/www/html/script/$name"
+        case "$name" in
+            config|uploads|apps)
+                if [ ! -e "$dest" ]; then
+                    echo "[entrypoint]   seeding missing /script/$name"
+                    cp -r "$src" "$dest"
+                fi
+                ;;
+            *)
+                cp -rf "$src" "/var/www/html/script/"
+                ;;
+        esac
+    done
+    shopt -u dotglob
+    chown -R www-data:www-data /var/www/html/script
+else
+    echo "[entrypoint] WARNING: /var/www/html/script_seed not found, skipping sync"
+fi
 
 # DB schema setup. Non-fatal: if it fails (e.g. board.support unreachable,
 # DB env vars missing) we still want Apache up so the user can reach
