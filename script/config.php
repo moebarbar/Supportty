@@ -1,4 +1,4 @@
-<?php
+?php
 
 /*
 * ==========================================================
@@ -41,13 +41,13 @@ define('CLOUD_DB_USER', getenv('CLOUD_DB_USER') ?: getenv('MYSQLUSER') ?: getenv
 define('CLOUD_DB_PASSWORD', getenv('CLOUD_DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: '');
 define('CLOUD_DB_HOST', getenv('CLOUD_DB_HOST') ?: getenv('MYSQLHOST') ?: getenv('MYSQL_HOST') ?: 'localhost');
 
-// SB core DB — required by script/include/functions.php
-define('SB_DB_HOST',     getenv('MYSQLHOST')     ?: getenv('MYSQL_HOST')     ?: 'localhost');
-define('SB_DB_USER',     getenv('MYSQLUSER')     ?: getenv('MYSQL_USER')     ?: '');
-define('SB_DB_PASSWORD', getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: '');
-define('SB_DB_NAME',     getenv('MYSQLDATABASE') ?: getenv('MYSQL_DATABASE') ?: '');
-define('SB_DB_PORT',     (int)(getenv('MYSQLPORT') ?: getenv('MYSQL_PORT') ?: 3306));
-define('SB_URL',         getenv('CLOUD_URL') ?: (getenv('RAILWAY_PUBLIC_DOMAIN') ? 'https://' . getenv('RAILWAY_PUBLIC_DOMAIN') : ''));
+// SB core DB — only define if not already set by the SB core's generated config file
+if (!defined('SB_DB_HOST'))     define('SB_DB_HOST',     getenv('MYSQLHOST')     ?: getenv('MYSQL_HOST')     ?: 'localhost');
+if (!defined('SB_DB_USER'))     define('SB_DB_USER',     getenv('MYSQLUSER')     ?: getenv('MYSQL_USER')     ?: '');
+if (!defined('SB_DB_PASSWORD')) define('SB_DB_PASSWORD', getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: '');
+if (!defined('SB_DB_NAME'))     define('SB_DB_NAME',     getenv('MYSQLDATABASE') ?: getenv('MYSQL_DATABASE') ?: '');
+if (!defined('SB_DB_PORT'))     define('SB_DB_PORT',     (int)(getenv('MYSQLPORT') ?: getenv('MYSQL_PORT') ?: 3306));
+if (!defined('SB_URL'))         define('SB_URL',         getenv('CLOUD_URL') ?: (getenv('RAILWAY_PUBLIC_DOMAIN') ? 'https://' . getenv('RAILWAY_PUBLIC_DOMAIN') : ''));
 
 // Cloud public URL (auto-derived from Railway domain if not set explicitly)
 define('CLOUD_URL', getenv('CLOUD_URL') ?: (getenv('RAILWAY_PUBLIC_DOMAIN') ? 'https://' . getenv('RAILWAY_PUBLIC_DOMAIN') : ''));
@@ -84,16 +84,16 @@ define('OPEN_EXCHANGE_RATE_APP_ID', getenv('OPEN_EXCHANGE_RATE_APP_ID') ?: '');
 
 /*
 * ----------------------------------------------------------
-    * OPTIONAL INTEGRATIONS
-    * ----------------------------------------------------------
-    *
-    * Defined only when the env var is set, so `defined()` checks
-    * elsewhere in the codebase keep their original meaning.
-    *
-    */
+* OPTIONAL INTEGRATIONS
+* ----------------------------------------------------------
+*
+* Defined only when the env var is set, so `defined()` checks
+* elsewhere in the codebase keep their original meaning.
+*
+*/
 
-    // Google
-    if (getenv('GOOGLE_CLIENT_ID')) define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID'));
+// Google
+if (getenv('GOOGLE_CLIENT_ID')) define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID'));
 if (getenv('GOOGLE_CLIENT_SECRET')) define('GOOGLE_CLIENT_SECRET', getenv('GOOGLE_CLIENT_SECRET'));
 if (getenv('GOOGLE_REFRESH_TOKEN')) define('GOOGLE_REFRESH_TOKEN', getenv('GOOGLE_REFRESH_TOKEN'));
 if (getenv('GOOGLE_LOGIN_CLIENT_ID')) define('GOOGLE_LOGIN_CLIENT_ID', getenv('GOOGLE_LOGIN_CLIENT_ID'));
@@ -161,11 +161,11 @@ if (getenv('SUPER_BRANDING') !== false) define('SUPER_BRANDING', filter_var(gete
 
 // AWS S3 (assembled from individual env vars)
 if (getenv('AWS_S3_ACCESS_KEY')) {
-        define('SB_CLOUD_AWS_S3', [
-                       'amazon-s3-access-key' => getenv('AWS_S3_ACCESS_KEY') ?: '',
-                       'amazon-s3-secret-access-key' => getenv('AWS_S3_SECRET_ACCESS_KEY') ?: '',
-                       'amazon-s3-bucket-name' => getenv('AWS_S3_BUCKET_NAME') ?: '',
-                       'amazon-s3-backup-bucket-name' => getenv('AWS_S3_BACKUP_BUCKET_NAME') ?: '',
-                       'amazon-s3-region' => getenv('AWS_S3_REGION') ?: '',
-                   ]);
+    define('SB_CLOUD_AWS_S3', [
+        'amazon-s3-access-key' => getenv('AWS_S3_ACCESS_KEY') ?: '',
+        'amazon-s3-secret-access-key' => getenv('AWS_S3_SECRET_ACCESS_KEY') ?: '',
+        'amazon-s3-bucket-name' => getenv('AWS_S3_BUCKET_NAME') ?: '',
+        'amazon-s3-backup-bucket-name' => getenv('AWS_S3_BACKUP_BUCKET_NAME') ?: '',
+        'amazon-s3-region' => getenv('AWS_S3_REGION') ?: '',
+    ]);
 }
