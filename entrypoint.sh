@@ -33,14 +33,6 @@ else
 echo "[entrypoint] WARNING: /var/www/html/script_seed not found, skipping sync"
 fi
 
-# Remove stale SB-core generated config files that contain hardcoded DB constants.
-# These conflict with our config.php which reads from environment variables.
-# The SB core will regenerate the config from setup.php using the correct env vars.
-if [ -d /var/www/html/script/config ]; then
-echo "[entrypoint] Removing stale SB-core config files..."
-find /var/www/html/script/config -name 'config_*.php' -delete
-fi
-
 # DB schema setup. Non-fatal: if it fails (e.g. board.support unreachable,
 # DB env vars missing) we still want Apache up so the user can reach
 # whatever pages don't need the DB and can read the error.
