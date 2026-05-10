@@ -180,10 +180,11 @@ function account_registration($details) {
 
             // Support Board installation
             $response = sb_installation(['db-name' => [$db_name], 'db-user' => [$user_slug], 'db-password' => [$db_password], 'db-host' => [CLOUD_DB_HOST], 'first-name' => [$details['first_name']], 'last-name' => [$details['last_name']], 'password' => [$details['password']], 'email' => [$details['email']], 'url' => CLOUD_URL . '/script', 'envato-purchase-code' => [ENVATO_PURCHASE_CODE], 'profile_image' => sb_isset($details, 'profile_image')]);
-            db_query('INSERT INTO sb_settings(name, value) VALUES (\'active_apps\', \'["dialogflow","whatsapp","telegram","messenger","viber","tickets","line"]\')', false, $token);
             if ($response && isset($response['error'])) {
+                error_log('[Supportty] sb_installation failed for ' . $details['email'] . ': ' . print_r($response, true));
                 return $response;
             }
+            db_query('INSERT INTO sb_settings(name, value) VALUES (\'active_apps\', \'["dialogflow","whatsapp","telegram","messenger","viber","tickets","line"]\')', false, $token);
 
             // Webhook and return
             cloud_webhook('user-registration', $details);
