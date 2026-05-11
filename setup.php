@@ -26,6 +26,35 @@ if (@$conn->query("SET GLOBAL sql_mode = ''")) {
     echo "[setup] Could not SET GLOBAL sql_mode (need SUPER priv): {$conn->error}\n";
 }
 
+// One-shot reset: set SUPPORTTY_RESET=1 in Railway env vars to wipe ALL signup state
+// (every tenant DB, every tenant MySQL user, the SaaS users table, every config_*.php
+// file). After the reset runs once, set SUPPORTTY_RESET=0 (or delete the var) so the
+// next deploy doesn't wipe again.
+if (getenv('SUPPORTTY_RESET') === '1') {
+    echo "[setup] SUPPORTTY_RESET=1 — wiping all signup state...\n";
+    $r = $conn->query("SHOW DATABASES LIKE 'sb\\_%'");
+    $dropped = 0;
+    if ($r) {
+        while ($row = $r->fetch_array()) {
+            $db = $row[0];
+            if (preg_match('/^sb_\d+$/', $db)) {
+                $conn->query("DROP DATABASE `$db`");
+                @$conn->query("DROP USER IF EXISTS '$db'@'%'");
+                @$conn->query("DROP USER IF EXISTS '$db'@'localhost'");
+                $dropped++;
+            }
+        }
+    }
+    echo "[setup]   dropped $dropped tenant DBs (and their users).\n";
+    if (@$conn->query("DELETE FROM users")) {
+        echo "[setup]   cleared SaaS users table.\n";
+    }
+    $configs = glob('/var/www/html/script/config/config_*.php') ?: [];
+    foreach ($configs as $cfg) { @unlink($cfg); }
+    echo "[setup]   deleted " . count($configs) . " per-tenant config files.\n";
+    echo "[setup] Reset complete. Remove SUPPORTTY_RESET env var to stop wiping on future deploys.\n";
+}
+
 function run_sql_file($conn, $file, $label) {
              if (!file_exists($file)) { echo "[setup] $label: SQL file not found: $file\n"; return; }
              $raw = file_get_contents($file);
